@@ -1,0 +1,15 @@
+{
+    "name": "davidpeach/laravel-base-command",
+    "authors": [
+        {
+            "name": "David Peach",
+            "email": "mail@davidpeach.co.uk"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "DavidPeach\\BaseCommand\\": "src/"
+        }
+    }
+}
