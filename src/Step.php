@@ -49,4 +49,23 @@ abstract class Step
     {
         return $this->type;
     }
+
+    protected function updateFile($fileToUpdate, $hookString, $toInsert)
+    {
+        $fileContents = file_get_contents(
+            $fileToUpdate
+        );
+
+        if (! strpos($fileContents, $toInsert) !== false) {
+            $fileContents = str_replace(
+                $hookString,
+                $hookString . $toInsert,
+                $fileContents
+            );
+            file_put_contents($fileToUpdate, $fileContents);
+            $this->report($fileToUpdate . ' updated with ' . $toInsert);
+        } else {
+            $this->report($fileToUpdate . ' already contains "' . $toInsert . '"');
+        }
+    }
 }
