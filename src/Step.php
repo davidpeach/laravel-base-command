@@ -57,15 +57,21 @@ abstract class Step
         );
 
         if (! strpos($fileContents, $toInsert) !== false) {
+
             $fileContents = str_replace(
                 $hookString,
                 $hookString . $toInsert,
                 $fileContents
             );
+
             file_put_contents($fileToUpdate, $fileContents);
+
             $this->report($fileToUpdate . ' updated with ' . $toInsert);
+
         } else {
+
             $this->report($fileToUpdate . ' already contains "' . $toInsert . '"');
+
         }
     }
 }
