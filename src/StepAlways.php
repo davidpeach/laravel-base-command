@@ -6,5 +6,5 @@ abstract class StepAlways extends Step
 {
     protected $type = self::TYPE_ALWAYS;
 
-    public abstract function handle();
+    abstract public function handle($feedback, $next);
 }

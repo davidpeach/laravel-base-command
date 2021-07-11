@@ -3,8 +3,11 @@
 namespace DavidPeach\BaseCommand\Commands;
 
 use DavidPeach\BaseCommand\Step;
+use DavidPeach\EscAppScaffolder\FeedbackManager;
 use Illuminate\Console\Command;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Str;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 class BaseCommand extends Command
 {
@@ -25,7 +28,7 @@ class BaseCommand extends Command
 
     public function registerCommands()
     {
-        $this->commands = collect($this->commands)->map(function($command) {
+        $this->commands = collect($this->commands)->map(function ($command) {
             return new $command($this);
         });
     }
@@ -38,7 +41,6 @@ class BaseCommand extends Command
     public function handle()
     {
         $this->commands->each(function (Step $command) {
-
             switch ($command->getType()) {
                 case $command::TYPE_ALWAYS:
                     $this->steps->push($command);
@@ -66,27 +68,24 @@ class BaseCommand extends Command
                         $command->choices(),
                         $command->choiceDefault()
                     );
-
-                    $handler = 'handle' . Str::studly($choice);
-
-                    if (! method_exists($command, $handler)) {
-                        $this->info(get_class($command) . '::' . $handler . ' does not exist. :(');
-                        break;
-                    }
-
-                    $this->steps->push($command->setHandlerMethod($handler));
-
+                    $this->steps->push(
+                        $command->setHandlerMethod('handle' . Str::studly($choice))
+                    );
                     break;
 
                 default:
-                    // Nothing
                     break;
-
             }
         });
 
-        $this->steps->each(function ($command) {
-            call_user_func_array([$command, $command->getHandlerMethod()], []);
-        });
+        $feedback = tap(new FeedbackManager(
+            new SymfonyStyle($this->input, $this->output)
+        ))->start($this->steps->count());
+
+        app(Pipeline::class)->send($feedback)
+            ->through($this->steps->toArray())
+            ->then(function ($feedback) {
+                $feedback->finish();
+            });
     }
 }

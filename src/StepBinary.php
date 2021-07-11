@@ -16,7 +16,7 @@ abstract class StepBinary extends Step
         return 'No';
     }
 
-    public abstract function question();
+    abstract public function question();
 
-    public abstract function handle();
+    abstract public function handle($string, $next);
 }
