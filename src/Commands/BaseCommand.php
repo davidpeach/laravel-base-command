@@ -2,8 +2,8 @@
 
 namespace DavidPeach\BaseCommand\Commands;
 
+use DavidPeach\BaseCommand\FeedbackManager;
 use DavidPeach\BaseCommand\Step;
-use DavidPeach\EscAppScaffolder\FeedbackManager;
 use Illuminate\Console\Command;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Str;
