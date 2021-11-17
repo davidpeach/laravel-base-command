@@ -2,19 +2,32 @@
 
 namespace DavidPeach\BaseCommand\Commands;
 
+use DavidPeach\BaseCommand\Exceptions\StepHandlerMethodMissing;
 use DavidPeach\BaseCommand\IO;
 use DavidPeach\BaseCommand\Step;
+use DavidPeach\BaseCommand\StepAlways;
+use DavidPeach\BaseCommand\StepBinary;
+use DavidPeach\BaseCommand\StepChoices;
 use Illuminate\Console\Command;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
+use Throwable;
 
 class BaseCommand extends Command
 {
     protected $signature = 'namespace:command';
 
-    protected Collection|array $commands = [];
+    protected string $startTitle = '';
+
+    protected string $startSubtitle = '';
+
+    protected string $finalSuccessMessage = '';
+
+    protected array $commands = [];
+
+    private Collection $commandClasses;
 
     protected Collection $steps;
 
@@ -29,8 +42,8 @@ class BaseCommand extends Command
 
     public function registerCommands()
     {
-        $this->commands = collect(value: $this->commands)->map(callback: function ($command) {
-            return new $command(commander: $this);
+        $this->commandClasses = collect(value: $this->commands)->map(callback: function ($command) {
+            return new $command;
         });
     }
 
@@ -39,14 +52,24 @@ class BaseCommand extends Command
      */
     public function handle(): int
     {
-        $this->commands->each(callback: function (Step $command) {
-            switch ($command->getType()) {
-                case $command::TYPE_ALWAYS:
+        $io = new IO(
+            input: $this->input,
+            output: $this->output,
+            command: $this,
+        );
+
+        $io->withProgressBar(numOfSteps: $this->steps->count());
+
+        $io->start(title: $this->getStartTitle(), subtitle: $this->getStartSubtitle());
+
+        $this->commandClasses->each(callback: function (Step $command) {
+            switch (true) {
+                case $command instanceof StepAlways:
                     $this->steps->push(command: $command);
 
                     break;
 
-                case $command::TYPE_BINARY:
+                case $command instanceof StepBinary:
                     $choice = $this->choice(
                         question: $command->question(),
                         choices: [
@@ -62,7 +85,7 @@ class BaseCommand extends Command
 
                     break;
 
-                case $command::TYPE_CHOICES:
+                case $command instanceof StepChoices:
                     $choice = $this->choice(
                         question: $command->question(),
                         choices: $command->choices(),
@@ -82,22 +105,34 @@ class BaseCommand extends Command
 
         try {
             app(abstract: Pipeline::class)
-                ->send(
-                    (new IO(
-                        input: $this->input,
-                        output: $this->output,
-                    ))->withProgressBar(numOfSteps: 15)
-                )
+                ->send(passable: $io)
                 ->through(pipes: $this->steps->toArray())
                 ->via(method: 'pipelineHandler')
                 ->then(destination: function (IO $io) {
-                    $io->output()->writeln(messages: 'DONE');
+                    $io->progressBar()->finish();
+                    $io->success(message: $this->getFinalSuccessMessage());
                 });
-        } catch (\Throwable $e) {
-//            dd($e->getMessage());
+        } catch (StepHandlerMethodMissing) {
+            return SymfonyCommand::INVALID;
+        } catch (Throwable) {
             return SymfonyCommand::FAILURE;
         }
 
         return SymfonyCommand::SUCCESS;
+    }
+
+    private function getStartTitle(): string
+    {
+        return $this->startTitle;
+    }
+
+    private function getStartSubtitle(): string
+    {
+        return $this->startSubtitle;
+    }
+
+    private function getFinalSuccessMessage(): string
+    {
+        return $this->finalSuccessMessage;
     }
 }

@@ -9,7 +9,7 @@ class BaseTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return [
-            'DavidPeach\BaseCommand\Tests\ChildPackages\ChildPackageOne\ChildPackageOneServiceProvider',
+            'DavidPeach\BaseCommand\Tests\ChildPackage\ChildPackageServiceProvider',
         ];
     }
 }
