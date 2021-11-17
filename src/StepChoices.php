@@ -2,24 +2,13 @@
 
 namespace DavidPeach\BaseCommand;
 
+use Symfony\Component\Console\Output\OutputInterface;
+
 abstract class StepChoices extends Step
 {
-    protected $type = self::TYPE_CHOICES;
+    protected string $type = self::TYPE_CHOICES;
 
-    abstract public function question();
+    abstract public function question(): string;
 
-    abstract public function choices();
-
-    public function handle($feedback, $next)
-    {
-        $handler = $this->getHandlerMethod();
-
-        if (!method_exists($this, $handler)) {
-            throw new \Exception(get_class($this) . '::' . $handler . ' does not exist. :(', 1);
-        }
-
-        call_user_func_array([$this, $handler], [$feedback]);
-
-        return $next($feedback);
-    }
+    abstract public function choices(): array;
 }

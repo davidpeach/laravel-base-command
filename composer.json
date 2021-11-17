@@ -21,7 +21,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "DavidPeach\\BaseCommand\\Tests\\": "tests/"
+            "DavidPeach\\BaseCommand\\Tests\\": "tests/",
+            "DavidPeach\\BaseCommand\\Tests\\ChildPackages\\ChildPackageOne\\": "tests/test-environment/child-packages/child-package-one/src/"
         }
     }
 }

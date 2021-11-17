@@ -2,7 +2,8 @@
 
 namespace DavidPeach\BaseCommand;
 
-use Symfony\Component\Process\Process;
+use DavidPeach\BaseCommand\Exceptions\StepHandlerMethodMissing;
+use Illuminate\Console\Command;
 
 abstract class Step
 {
@@ -14,13 +15,13 @@ abstract class Step
 
     const DEFAULT_ANSWER_INDEX = 0;
 
-    protected $type = self::TYPE_ALWAYS;
+    protected string $type = self::TYPE_ALWAYS;
 
-    protected $handler = 'handle';
+    protected string $handler = 'handle';
 
-    protected $commander;
+    protected Command $commander;
 
-    public function __construct($commander)
+    public function __construct(Command $commander)
     {
         $this->commander = $commander;
     }
@@ -30,23 +31,14 @@ abstract class Step
         return static::DEFAULT_ANSWER_INDEX;
     }
 
-    public function ask(string $question)
+    public function ask(string $question): mixed
     {
         return $this->commander->ask('❓ ' . $question);
     }
 
-    public function confirm(string $question, bool $default = true)
+    public function confirm(string $question, bool $default = true): bool
     {
         return $this->commander->confirm('🤔 ' . $question, $default);
-    }
-
-    public function ensurePrefixedWith(string $string, string $prefix)
-    {
-        if (strpos(trim($string), $prefix) !== 0) {
-            return $prefix . $string;
-        }
-
-        return $string;
     }
 
     public function setHandlerMethod(string $handler): self
@@ -66,32 +58,31 @@ abstract class Step
         return $this->type;
     }
 
-    protected function asyncProcess(array $command, callable $callback)
+    /**
+     * @throws StepHandlerMethodMissing
+     */
+    public function pipelineHandler(IO $io, Callable $next)
     {
-        $process = new Process($command);
-        $process->start();
-        $process->waitUntil(function ($type, $output) use ($callback) {
-            return $callback($output);
-        });
-        return $process->getOutput();
-    }
+        $handler = $this->getHandlerMethod();
 
-    protected function updateFile($fileToUpdate, $hookString, $toInsert)
-    {
-        $fileContents = file_get_contents(
-            $fileToUpdate
-        );
-
-        if (strpos($fileContents, $toInsert) !== false) {
-            return;
+//        dd($this);
+        // DEFINE IF A STEP SHOULD CEASE REMAINING STEPS
+        // MAYBE DEFINE ROLEBACK STEPS WITH A `handleRollback` method?
+        if (!method_exists($this, $handler)) {
+            throw new StepHandlerMethodMissing(
+                message: get_class($this) . '::' . $handler . ' does not exist. :(',
+                code: 1
+            );
         }
 
-        $fileContents = str_replace(
-            $hookString,
-            $hookString . $toInsert,
-            $fileContents
+        call_user_func_array(
+            callback: [$this, $handler],
+            args: [
+                $io->input(),
+                $io->output(),
+            ]
         );
 
-        file_put_contents($fileToUpdate, $fileContents);
+        return $next($io);
     }
 }

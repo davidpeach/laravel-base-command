@@ -9,32 +9,19 @@ abstract class BaseCommandServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      *
-     * @return void
      */
-    public function register()
+    public function register(): void
     {
         //
     }
 
     /**
      * Bootstrap any application services.
-     *
-     * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $this->registerArtisanCommand();
     }
 
-    public function registerArtisanCommand()
-    {
-        throw new \Exception('
-
-Please implement the registerArtisanCommand() method in your service provider.
-This should register a command class that extends \DavidPeach\BaseCommand\Commands\BaseCommand.
-
-For example: $this->commands([MyCommand::class]);',
-            1);
-
-    }
+    public abstract function registerArtisanCommand();
 }
