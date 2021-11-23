@@ -2,20 +2,34 @@
 
 namespace DavidPeach\BaseCommand\Commands;
 
-use DavidPeach\BaseCommand\FeedbackManager;
+use DavidPeach\BaseCommand\Exceptions\StepHandlerMethodMissing;
+use DavidPeach\BaseCommand\IO;
 use DavidPeach\BaseCommand\Step;
+use DavidPeach\BaseCommand\StepAlways;
+use DavidPeach\BaseCommand\StepBinary;
+use DavidPeach\BaseCommand\StepChoice;
 use Illuminate\Console\Command;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Console\Command\Command as SymfonyCommand;
+use Throwable;
 
 class BaseCommand extends Command
 {
-    protected $signature = 'basecommand:signature';
+    protected $signature = 'namespace:command';
 
-    protected $commands = [];
+    protected string $startTitle = '';
 
-    protected $steps;
+    protected string $startSubtitle = '';
+
+    protected string $finalSuccessMessage = '';
+
+    protected array $commands = [];
+
+    private Collection $commandClasses;
+
+    protected Collection $steps;
 
     public function __construct()
     {
@@ -28,49 +42,60 @@ class BaseCommand extends Command
 
     public function registerCommands()
     {
-        $this->commands = collect($this->commands)->map(function ($command) {
-            return new $command($this);
+        $this->commandClasses = collect(value: $this->commands)->map(callback: function ($command) {
+            return new $command;
         });
     }
 
     /**
-     * Execute the console command.
-     *
-     * @return mixed
+     * Execute the command
      */
-    public function handle()
+    public function handle(): int
     {
-        $this->commands->each(function (Step $command) {
-            switch ($command->getType()) {
-                case $command::TYPE_ALWAYS:
-                    $this->steps->push($command);
+        $io = new IO(
+            input: $this->input,
+            output: $this->output,
+            command: $this,
+        );
+
+        $io->withProgressBar(numOfSteps: $this->steps->count());
+
+        $io->start(title: $this->getStartTitle(), subtitle: $this->getStartSubtitle());
+
+        $this->commandClasses->each(callback: function (Step $command) {
+            switch (true) {
+                case $command instanceof StepAlways:
+                    $this->steps->push(command: $command);
+
                     break;
 
-                case $command::TYPE_BINARY:
+                case $command instanceof StepBinary:
                     $choice = $this->choice(
-                        $command->question(),
-                        [
+                        question: $command->question(),
+                        choices: [
                             $command->confirmationAnswer(),
                             $command->declineAnswer()
                         ],
-                        $command->choiceDefault()
+                        default: $command->choiceDefault()
                     );
 
                     if ($choice === $command->confirmationAnswer()) {
-                        $this->steps->push($command);
+                        $this->steps->push(command: $command);
                     }
 
                     break;
 
-                case $command::TYPE_CHOICES:
+                case $command instanceof StepChoice:
                     $choice = $this->choice(
-                        $command->question(),
-                        $command->choices(),
-                        $command->choiceDefault()
+                        question: $command->question(),
+                        choices: $command->choices(),
+                        default: $command->choiceDefault()
                     );
+
                     $this->steps->push(
-                        $command->setHandlerMethod('handle' . Str::studly($choice))
+                        $command->setHandlerMethod(handler: 'handle' . Str::studly($choice))
                     );
+
                     break;
 
                 default:
@@ -78,14 +103,36 @@ class BaseCommand extends Command
             }
         });
 
-        $feedback = tap(new FeedbackManager(
-            new SymfonyStyle($this->input, $this->output)
-        ))->start($this->steps->count());
+        try {
+            app(abstract: Pipeline::class)
+                ->send(passable: $io)
+                ->through(pipes: $this->steps->toArray())
+                ->via(method: 'pipelineHandler')
+                ->then(destination: function (IO $io) {
+                    $io->progressBar()->finish();
+                    $io->success(message: $this->getFinalSuccessMessage());
+                });
+        } catch (StepHandlerMethodMissing) {
+            return SymfonyCommand::INVALID;
+        } catch (Throwable) {
+            return SymfonyCommand::FAILURE;
+        }
 
-        app(Pipeline::class)->send($feedback)
-            ->through($this->steps->toArray())
-            ->then(function ($feedback) {
-                $feedback->finish();
-            });
+        return SymfonyCommand::SUCCESS;
+    }
+
+    private function getStartTitle(): string
+    {
+        return $this->startTitle;
+    }
+
+    private function getStartSubtitle(): string
+    {
+        return $this->startSubtitle;
+    }
+
+    private function getFinalSuccessMessage(): string
+    {
+        return $this->finalSuccessMessage;
     }
 }

@@ -4,19 +4,17 @@ namespace DavidPeach\BaseCommand;
 
 abstract class StepBinary extends Step
 {
-    protected $type = self::TYPE_BINARY;
-
-    public function confirmationAnswer()
+    public function confirmationAnswer(): string
     {
         return 'Yes';
     }
 
-    public function declineAnswer()
+    public function declineAnswer(): string
     {
         return 'No';
     }
 
-    abstract public function question();
+    abstract public function question(): string;
 
-    abstract public function handle($string, $next);
+    abstract public function handle(IO $io);
 }
