@@ -20,8 +20,10 @@ abstract class BaseCommandServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->registerArtisanCommand();
+        $this->commands([
+            $this->getCommandClass(),
+        ]);
     }
 
-    public abstract function registerArtisanCommand();
+    protected abstract function getCommandClass(): string;
 }

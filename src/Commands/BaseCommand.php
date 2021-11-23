@@ -7,7 +7,7 @@ use DavidPeach\BaseCommand\IO;
 use DavidPeach\BaseCommand\Step;
 use DavidPeach\BaseCommand\StepAlways;
 use DavidPeach\BaseCommand\StepBinary;
-use DavidPeach\BaseCommand\StepChoices;
+use DavidPeach\BaseCommand\StepChoice;
 use Illuminate\Console\Command;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
@@ -85,7 +85,7 @@ class BaseCommand extends Command
 
                     break;
 
-                case $command instanceof StepChoices:
+                case $command instanceof StepChoice:
                     $choice = $this->choice(
                         question: $command->question(),
                         choices: $command->choices(),

@@ -3,9 +3,9 @@
 namespace DavidPeach\BaseCommand\Tests\ChildPackage\Steps;
 
 use DavidPeach\BaseCommand\IO;
-use DavidPeach\BaseCommand\StepChoices;
+use DavidPeach\BaseCommand\StepChoice;
 
-class ExampleStepChoice extends StepChoices
+class ExampleStepChoice extends StepChoice
 {
     public function question(): string
     {

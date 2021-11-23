@@ -6,10 +6,8 @@ use DavidPeach\BaseCommand\BaseCommandServiceProvider;
 
 class ChildPackageServiceProvider extends BaseCommandServiceProvider
 {
-    public function registerArtisanCommand()
+    protected function getCommandClass(): string
     {
-        $this->commands([
-            ChildPackageCommand::class,
-        ]);
+        return ChildPackageCommand::class;
     }
 }
