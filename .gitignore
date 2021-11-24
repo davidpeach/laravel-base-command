@@ -1,3 +1,4 @@
 .idea
 vendor/
 .phpunit.result.cache
+tests/test-environment/child-package/src/Steps/MyGenerated*

@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use DavidPeach\BaseCommand\IO;
+use DavidPeach\BaseCommand\StepAlways;
+
+class {{ class }} extends StepAlways
+{
+    public function handle(IO $io)
+    {
+        // Add your logic in here
+    }
+}

@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use DavidPeach\BaseCommand\IO;
+use DavidPeach\BaseCommand\StepBinary;
+
+class {{ class }} extends StepBinary
+{
+    public function handle(IO $io)
+    {
+        // Add your step's logic in here.
+    }
+
+    public function question(): string
+    {
+        // Return your question here.
+        // i.e. return 'Would you like to run this step?';
+    }
+}

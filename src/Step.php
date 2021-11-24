@@ -3,7 +3,6 @@
 namespace DavidPeach\BaseCommand;
 
 use DavidPeach\BaseCommand\Exceptions\StepHandlerMethodMissing;
-use Illuminate\Console\Command;
 use Throwable;
 
 abstract class Step
