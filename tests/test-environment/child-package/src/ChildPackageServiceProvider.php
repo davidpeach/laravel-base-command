@@ -10,4 +10,14 @@ class ChildPackageServiceProvider extends BaseCommandServiceProvider
     {
         return ChildPackageCommand::class;
     }
+
+    protected function getStepsDirectory(): string
+    {
+        return  __DIR__ . '/Steps';
+    }
+
+    protected function getStepsNamespace(): string
+    {
+        return  'DavidPeach\BaseCommand\Tests\ChildPackage\Steps';
+    }
 }

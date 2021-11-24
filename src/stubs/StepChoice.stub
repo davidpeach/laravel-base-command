@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use DavidPeach\BaseCommand\IO;
+use DavidPeach\BaseCommand\StepChoice;
+
+class {{ class }} extends StepChoice
+{
+    public function question(): string
+    {
+        // TODO: Implement question() method.
+    }
+
+    public function choices(): array
+    {
+        // TODO: Implement choices() method.
+    }
+}
